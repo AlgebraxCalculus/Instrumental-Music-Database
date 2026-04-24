@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layered Music Information Retrieval</title>
+    <script src="https://unpkg.com/wavesurfer.js@7"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #10b981;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #1e293b;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 { font-size: 2rem; margin-bottom: 8px; color: #0f172a; }
+        p { color: var(--secondary); margin-bottom: 30px; }
+
+        /* Form Upload */
+        .upload-area {
+            border: 2px dashed var(--border);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+
+        .upload-area:hover { border-color: var(--primary); background: #f1f5f9; }
+
+        .btn-search {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: opacity 0.2s;
+        }
+
+        .btn-search:hover { opacity: 0.9; }
+
+        /* Input Query Section */
+        #inputSection {
+            display: none;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        #inputSection h3 { margin-top: 0; font-size: 1.1rem; color: #1e40af; }
+
+        /* Results Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            display: none; /* Ẩn cho đến khi có kết quả */
+        }
+
+        th {
+            text-align: left;
+            background: #f1f5f9;
+            padding: 16px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            padding: 20px 16px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        /* Similarity Badge */
+        .sim-badge {
+            background: #dcfce7;
+            color: #166534;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            border: 1px solid #bbf7d0;
+            display: inline-block;
+        }
+
+        /* Layer Analysis Box */
+        .layer-box { display: flex; flex-direction: column; gap: 4px; }
+        .layer-tag {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            background: #f8fafc;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #f1f5f9;
+        }
+        .layer-tag b { color: var(--primary); }
+
+        /* Waveform & Playback */
+        .waveform-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .wave-container {
+            flex-grow: 1;
+            height: 40px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .play-pause-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: var(--success);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: transform 0.1s;
+        }
+
+        .play-pause-btn:active { transform: scale(0.9); }
+
+        #status { display: none; text-align: center; font-weight: 500; color: var(--primary); margin: 20px 0; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Music Content Retrieval</h1>
+            <p>Layered Intelligence Approach (Physical • Perceptual • Identity)</p>
+        </header>
+
+        <div class="upload-area">
+            <form id="searchForm">
+                <input type="file" id="audioInput" accept="audio/*" required>
+                <div style="margin-top: 15px;">
+                    <button type="submit" class="btn-search">Start Retrieval</button>
+                </div>
+            </form>
+            <div id="status">⏳ Processing audio and querying database...</div>
+        </div>
+
+        <div id="inputSection">
+            <h3>🎧 Query Audio (Input)</h3>
+            <div class="waveform-wrapper">
+                <button class="play-pause-btn" id="playInput">▶</button>
+                <div id="inputWaveform" class="wave-container"></div>
+            </div>
+        </div>
+
+        <table id="resultTable">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">Rank</th>
+                    <th>Track Identity</th>
+                    <th style="text-align: center;">Similarity</th>
+                    <th style="width: 180px;">Layer Analysis</th>
+                    <th style="width: 350px;">Waveform & Playback</th>
+                </tr>
+            </thead>
+            <tbody id="resultBody">
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        let surfers = []; // Quản lý tất cả các instance wavesurfer
+
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const file = document.getElementById('audioInput').files[0];
+            if (!file) return;
+
+            // Reset UI
+            document.getElementById('status').style.display = 'block';
+            document.getElementById('inputSection').style.display = 'none';
+            document.getElementById('resultTable').style.display = 'none';
+            surfers.forEach(s => s.destroy());
+            surfers = [];
+            document.getElementById('inputWaveform').innerHTML = '';
+            document.getElementById('resultBody').innerHTML = '';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/search', { method: 'POST', body: formData });
+                const data = await response.json();
+                document.getElementById('status').style.display = 'none';
+
+                // 1. Render Input Waveform
+                document.getElementById('inputSection').style.display = 'block';
+                const inputWs = WaveSurfer.create({
+                    container: '#inputWaveform',
+                    waveColor: '#3b82f6',
+                    progressColor: '#1d4ed8',
+                    height: 40,
+                    url: `/api/audio?path=${data.input_audio_path}`
+                });
+                surfers.push(inputWs);
+                document.getElementById('playInput').onclick = () => {
+                    inputWs.playPause();
+                    document.getElementById('playInput').textContent = inputWs.isPlaying() ? '⏸' : '▶';
+                };
+
+                // 2. Render Results Table
+                document.getElementById('resultTable').style.display = 'table';
+                const tbody = document.getElementById('resultBody');
+
+                data.results.forEach((res, i) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td style="font-weight: 800; color: #94a3b8;">#${res.rank}</td>
+                        <td>
+                            <div style="font-weight: 600; color: #0f172a;">${res.file_name}</div>
+                            <div style="font-size: 0.75rem; color: #64748b;">ID: ${Math.random().toString(36).substr(2, 9)}</div>
+                        </td>
+                        <td style="text-align: center;">
+                            <div class="sim-badge">${res.similarity_score}%</div>
+                        </td>
+                        <td>
+                            <div class="layer-box">
+                                <div class="layer-tag">Physical: <b>${res.l1_sim}%</b></div>
+                                <div class="layer-tag">Perceptual: <b>${res.l2_sim}%</b></div>
+                                <div class="layer-tag">Identity: <b>${res.l3_sim}%</b></div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="waveform-wrapper">
+                                <button class="play-pause-btn" id="play-${i}">▶</button>
+                                <div id="wave-${i}" class="wave-container"></div>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+
+                    // Khởi tạo waveform cho từng dòng
+                    const ws = WaveSurfer.create({
+                        container: `#wave-${i}`,
+                        waveColor: '#cbd5e1',
+                        progressColor: '#10b981',
+                        height: 40,
+                        url: `/api/audio?path=${res.path}`
+                    });
+                    surfers.push(ws);
+
+                    const btn = document.getElementById(`play-${i}`);
+                    btn.onclick = () => {
+                        ws.playPause();
+                        btn.textContent = ws.isPlaying() ? '⏸' : '▶';
+                    };
+                    ws.on('finish', () => btn.textContent = '▶');
+                });
+
+            } catch (err) {
+                console.error(err);
+                alert("An error occurred while processing the audio.");
+                document.getElementById('status').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
